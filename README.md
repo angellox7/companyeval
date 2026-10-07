@@ -93,6 +93,18 @@ Each sector ships with a TAM floor, a pre-money or cap band, a round-size band, 
 py -3 manage.py test evaluations
 ```
 
-## Tests
-Create a set of well defined criteria to run the evaluations against.
-The agent then fills out the form and generate the evaluation based on what it founds.
+## Key Decisions
+* Create a set of well defined criteria to run the evaluations against.
+* The agent then fills out the form and generate the evaluation based on the entered data.
+
+
+### Next
+I'd focus on:
+* the output of the web scrapper
+
+
+## How I used AI
+* I used AI To research and define the variables worth considering on an investment analysis at a seed stage
+* For creating the working prototype.
+* to write automated tests
+* To debug issues
