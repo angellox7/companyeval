@@ -1,0 +1,86 @@
+{% extends "evaluations/base.html" %}
+{% load eval_tags %}
+
+{% block title %}{{ title }} · {{ deal.company_name }} · Companyeval{% endblock %}
+
+{% block content %}
+  {% include "evaluations/_deal_nav.html" %}
+  <header class="page-head">
+    <div>
+      <p class="kicker"><a href="{% url 'evaluations:deal_detail' deal.pk %}">{{ deal.company_name }}</a></p>
+      <h1>{{ title }}</h1>
+      <p class="lede">These facts feed risk flags and the benchmark comparison. They do not set the score. The rating below is your judgment. 1 is well below a typical seed company in this sector. 3 meets that bar. 5 is exceptional.</p>
+    </div>
+  </header>
+
+  {% if section == "market" and benchmark %}
+    <aside class="callout">
+      <p>Venture-scale TAM floor for {{ benchmark.get_sector_display }}: {{ benchmark.tam_floor_usd|usd }}.</p>
+      <p>This floor is a working default. <a href="{% url 'evaluations:benchmarks' %}">Edit benchmarks</a> to match your bar.</p>
+    </aside>
+  {% endif %}
+  {% if section == "terms" and benchmark %}
+    <aside class="callout">
+      <p>Typical pre-money or cap for {{ benchmark.get_sector_display }}: {{ benchmark.pre_money_low_usd|usd }}–{{ benchmark.pre_money_high_usd|usd }}.</p>
+      <p>Typical round size: {{ benchmark.round_size_low_usd|usd }}–{{ benchmark.round_size_high_usd|usd }}.</p>
+      <p>These bands are working defaults. <a href="{% url 'evaluations:benchmarks' %}">Edit benchmarks</a> to match your bar.</p>
+    </aside>
+  {% endif %}
+
+  <form class="stack-form" method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="banner-error">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+    {% for field in form.visible_fields %}
+      {% include "evaluations/_field.html" with field=field %}
+    {% endfor %}
+
+    {% if founder_formset %}
+      <fieldset class="founders">
+        <legend>Founders</legend>
+        {{ founder_formset.management_form }}
+        {{ founder_formset.non_form_errors }}
+        {% for founder_form in founder_formset %}
+          <div class="founder-card">
+            {% for hidden in founder_form.hidden_fields %}{{ hidden }}{% endfor %}
+            {% for error in founder_form.non_field_errors %}
+              <p class="error">{{ error }}</p>
+            {% endfor %}
+            {% for field in founder_form.visible_fields %}
+              {% if field.name != "DELETE" or founder_form.instance.pk %}
+                {% include "evaluations/_field.html" with field=field %}
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </fieldset>
+    {% endif %}
+
+    <fieldset class="ratings">
+      <legend>Your rating</legend>
+      {% for row in score_form.score_rows %}
+        <div class="score-block{% if row.score.errors %} has-error{% endif %}">
+          <p class="score-label" id="label-{{ row.key }}">{{ row.label }}</p>
+          <div class="scale" role="radiogroup" aria-labelledby="label-{{ row.key }}">
+            {% for radio in row.score %}
+              <label class="scale-option">
+                {{ radio.tag }}
+                <span>{{ radio.choice_label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+          {% for error in row.score.errors %}
+            <p class="error">{{ error }}</p>
+          {% endfor %}
+          {% include "evaluations/_field.html" with field=row.note %}
+        </div>
+      {% endfor %}
+    </fieldset>
+
+    <button type="submit" class="primary">Save {{ title|lower }}</button>
+  </form>
+{% endblock %}

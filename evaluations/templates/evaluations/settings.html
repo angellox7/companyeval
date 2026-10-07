@@ -1,0 +1,24 @@
+{% extends "evaluations/base.html" %}
+
+{% block title %}Settings · Companyeval{% endblock %}
+
+{% block content %}
+  <header class="page-head">
+    <div>
+      <h1>Weights</h1>
+      <p class="lede">Weights apply to every deal. They must sum to 100. Saving recalculates every composite.</p>
+    </div>
+  </header>
+  <form class="stack-form narrow" method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="banner-error">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    {% for field in form.visible_fields %}
+      {% include "evaluations/_field.html" with field=field %}
+    {% endfor %}
+    <button type="submit" class="primary">Save weights</button>
+  </form>
+{% endblock %}

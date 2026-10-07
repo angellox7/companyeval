@@ -1,0 +1,148 @@
+{% extends "evaluations/base.html" %}
+
+{% block title %}Assessment · {{ deal.company_name }} · Companyeval{% endblock %}
+
+{% block content %}
+  {% include "evaluations/_deal_nav.html" %}
+
+  {% if deal.evaluation_mode != "ai" %}
+    <header class="page-head">
+      <div>
+        <h1>{{ deal.company_name }}</h1>
+        <p class="lede">This deal uses the manual scorecard. Switch it to AI-assisted on the company page to generate a partner assessment.</p>
+      </div>
+    </header>
+  {% else %}
+    <div class="no-print">
+      {% if not openai_configured %}
+        <div class="banner-error">
+          <p>Set <code>OPENAI_API_KEY</code> in the environment or in a <code>.env</code> file in the project root. The model is <code>{{ openai_model }}</code> unless you set <code>OPENAI_MODEL</code>.</p>
+        </div>
+      {% endif %}
+
+      {% if sources %}
+        <ul class="source-status">
+          {% for source in sources %}
+            <li>
+              <strong>{{ source.get_kind_display }}</strong>
+              {% if source.body %}
+                <span class="muted">Text stored for citations. {{ source.body|length }} characters stored.</span>
+              {% elif source.detail %}
+                <span class="error">{{ source.detail }}</span>
+              {% elif source.kind == "deck" and deal.deck %}
+                <span class="muted">Attached. Generate the assessment to read it.</span>
+              {% else %}
+                <span class="muted">Not provided.</span>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <div class="actions">
+        <form method="post" action="{% url 'evaluations:deal_generate' deal.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="primary">{% if memo %}Regenerate assessment{% else %}Generate assessment{% endif %}</button>
+        </form>
+        {% if memo %}
+          <a class="primary" href="{% url 'evaluations:deal_assessment_pdf' deal.pk %}">Download PDF</a>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if memo %}
+      <article class="memo">
+        <header class="memo-head">
+          <p class="kicker">Partner assessment · {{ deal.get_sector_display }}</p>
+          <h1>{{ deal.company_name }}</h1>
+          {% if deal.one_liner %}<p class="lede">{{ deal.one_liner }}</p>{% endif %}
+          <p class="memo-score">
+            {% if report.evaluation.composite is None %}
+              No composite yet
+            {% else %}
+              {{ report.evaluation.composite_display }}
+              {% if report.evaluation.complete %}
+                · {{ report.evaluation.screen_label }}
+              {% else %}
+                · Partial · {{ report.evaluation.scored_count }} of {{ report.evaluation.factor_count }} factors
+              {% endif %}
+            {% endif %}
+          </p>
+          <p class="calculated">Calculated from the extracted facts and your weights.</p>
+        </header>
+
+        {% for section in memo.sections %}
+          <section class="memo-section">
+            <h2>{{ section.label }} <span>{{ section.running_display }}</span></h2>
+            <p class="category-meta">{{ section.progress_label }}</p>
+            {% for item in section.claims %}
+              <p>{{ item.claim.body }}<sup><a href="#source-{{ item.number }}">{{ item.number }}</a></sup></p>
+            {% empty %}
+              <p class="muted">No sourced claim for this category.</p>
+            {% endfor %}
+          </section>
+        {% endfor %}
+
+        <section class="memo-against">
+          <h2>Strongest argument against investing</h2>
+          {% if memo.assessment.against_verified %}
+            <p>{{ memo.assessment.against_text }}<sup><a href="#source-{{ memo.against_number }}">{{ memo.against_number }}</a></sup></p>
+          {% else %}
+            <p>The strongest argument against investing could not be tied to a source.</p>
+          {% endif %}
+        </section>
+
+        {% if report.flags or report.benchmark_rows %}
+          <section class="memo-calculated">
+            <h2>Calculated checks</h2>
+            <p class="calculated">Calculated from the extracted facts and your weights.</p>
+            {% if report.flags %}
+              <ul>
+                {% for flag in report.flags %}
+                  <li>{{ flag.severity_label }}: {{ flag.message }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+            {% if report.benchmark_rows %}
+              <ul>
+                {% for row in report.benchmark_rows %}
+                  <li>{{ row.label }}: {{ row.value_display }} · {{ row.position_label }} ({{ row.band_display }})</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </section>
+        {% endif %}
+
+        {% if memo.footnotes %}
+          <section class="memo-sources">
+            <h2>Sources</h2>
+            <ol>
+              {% for note in memo.footnotes %}
+                <li id="source-{{ note.number }}">
+                  <strong>{{ note.citation }}.</strong> “{{ note.excerpt }}”
+                </li>
+              {% endfor %}
+            </ol>
+          </section>
+        {% endif %}
+      </article>
+
+      {% if memo.assessment.unverified %}
+        <section class="panel no-print unverified">
+          <h2>Unverified</h2>
+          <p class="muted">These sentences were dropped because the excerpt was not in the cited source. They are not findings.</p>
+          <ul>
+            {% for item in memo.assessment.unverified %}
+              <li>{{ item.text }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+    {% else %}
+      <section class="empty">
+        <h2>No assessment yet</h2>
+        <p>Generate one from the deck, website, founder bios, and first-call notes. The same scorecard weights, flags, and benchmarks apply, and every claim has to quote a source.</p>
+      </section>
+    {% endif %}
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "evaluations/base.html" %}
+
+{% block title %}Sign in · Companyeval{% endblock %}
+
+{% block content %}
+  <section class="auth-card">
+    <h1>Sign in</h1>
+    <p class="lede">Seed pipeline for this install. Use the account you created with <code>createsuperuser</code>.</p>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="banner-error">
+          {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+      {% endif %}
+      {% for field in form %}
+        {% include "evaluations/_field.html" with field=field %}
+      {% endfor %}
+      <button type="submit" class="primary">Sign in</button>
+      <input type="hidden" name="next" value="{{ next }}">
+    </form>
+  </section>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "evaluations/base.html" %}
+
+{% block title %}{{ title }} · Companyeval{% endblock %}
+
+{% block content %}
+  {% if deal %}
+    {% include "evaluations/_deal_nav.html" %}
+  {% endif %}
+  <header class="page-head">
+    <div>
+      <h1>{{ title }}</h1>
+      <p class="lede">Choose AI-assisted or manual. Round terms for a manual deal live on the Terms section. AI-assisted fills them from the sources when you generate.</p>
+    </div>
+  </header>
+  <form class="stack-form" method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="banner-error">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+    {% for field in form.visible_fields %}
+      {% include "evaluations/_field.html" with field=field %}
+    {% endfor %}
+    {% if form.evaluation_mode.value != "manual" %}
+      <p class="help">AI-assisted reads the deck, website, founder bios, and first-call notes when you generate the partner assessment. Each claim in that assessment has to quote one of those sources.</p>
+    {% else %}
+      <p class="help">The deck is stored for reference. You score the company yourself.</p>
+    {% endif %}
+    {% if deal and deal.deck %}
+      <p class="help"><a href="{% url 'evaluations:deal_deck' deal.pk %}">View attached deck</a>.</p>
+    {% endif %}
+    <button type="submit" class="primary">{{ submit_label }}</button>
+  </form>
+{% endblock %}

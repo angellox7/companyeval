@@ -1,0 +1,12 @@
+<nav class="section-nav" aria-label="Deal sections">
+  <a href="{% url 'evaluations:deal_detail' deal.pk %}" {% if section == "overview" %}aria-current="page"{% endif %}>Overview</a>
+  {% if deal.evaluation_mode == "ai" %}
+    <a href="{% url 'evaluations:deal_assessment' deal.pk %}" {% if section == "assessment" %}aria-current="page"{% endif %}>Assessment</a>
+  {% endif %}
+  <a href="{% url 'evaluations:team_section' deal.pk %}" {% if section == "team" %}aria-current="page"{% endif %}>Team</a>
+  <a href="{% url 'evaluations:market_section' deal.pk %}" {% if section == "market" %}aria-current="page"{% endif %}>Market</a>
+  <a href="{% url 'evaluations:product_section' deal.pk %}" {% if section == "product" %}aria-current="page"{% endif %}>Product</a>
+  <a href="{% url 'evaluations:traction_section' deal.pk %}" {% if section == "traction" %}aria-current="page"{% endif %}>Traction</a>
+  <a href="{% url 'evaluations:terms_section' deal.pk %}" {% if section == "terms" %}aria-current="page"{% endif %}>Terms</a>
+  <a href="{% url 'evaluations:deal_edit' deal.pk %}" {% if section == "edit" %}aria-current="page"{% endif %}>Company</a>
+</nav>

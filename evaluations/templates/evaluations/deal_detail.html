@@ -1,0 +1,110 @@
+{% extends "evaluations/base.html" %}
+{% load eval_tags %}
+
+{% block title %}{{ deal.company_name }} · Companyeval{% endblock %}
+
+{% block content %}
+  {% include "evaluations/_deal_nav.html" %}
+  <header class="deal-title">
+    <p class="kicker">{{ deal.get_sector_display }} · <span class="status status-{{ deal.status }}">{{ deal.get_status_display }}</span></p>
+    <h1>{{ deal.company_name }}</h1>
+    {% if deal.one_liner %}<p class="lede">{{ deal.one_liner }}</p>{% endif %}
+    <p class="meta-line">
+      {% if deal.location %}{{ deal.location }}{% endif %}
+      {% if deal.year_founded %}{% if deal.location %} · {% endif %}Founded {{ deal.year_founded }}{% endif %}
+      {% if deal.website %}{% if deal.location or deal.year_founded %} · {% endif %}<a href="{{ deal.website }}">{{ deal.website }}</a>{% endif %}
+      {% if deal.deck %}{% if deal.location or deal.year_founded or deal.website %} · {% endif %}<a href="{% url 'evaluations:deal_deck' deal.pk %}">Pitch deck</a>{% endif %}
+    </p>
+  </header>
+
+  {% if report.snapshot %}
+    <dl class="snapshot">
+      {% for item in report.snapshot %}
+        <div>
+          <dt>{{ item.label }}</dt>
+          <dd>{{ item.value }}</dd>
+        </div>
+      {% endfor %}
+    </dl>
+  {% endif %}
+
+  <section class="score-hero {% if report.evaluation.complete %}screen-{{ report.evaluation.screen_slug }}{% endif %}">
+    <div>
+      <p class="score-kicker">Composite</p>
+      <p class="score-number" data-composite="{{ report.evaluation.composite_display }}">
+        {% if report.evaluation.composite is None %}—{% else %}{{ report.evaluation.composite_display }}{% endif %}
+      </p>
+      {% if report.evaluation.complete %}
+        <p class="screen-label" data-screen="{{ report.evaluation.screen_label }}">{{ report.evaluation.screen_label }}</p>
+      {% elif report.evaluation.partial %}
+        <p class="score-meta">Partial · {{ report.evaluation.scored_count }} of {{ report.evaluation.factor_count }} factors</p>
+      {% else %}
+        <p class="score-meta">Score the factors to generate a composite.</p>
+      {% endif %}
+    </div>
+    <p class="score-explainer">
+      A finished category contributes (its average / 5) × its weight.
+      Until all {{ report.evaluation.factor_count }} factors are scored, unscored factors count as zero and this number stays partial.
+      The screen label appears when the scorecard is complete.
+    </p>
+  </section>
+
+  <section class="category-list" aria-label="Categories">
+    {% for category in report.evaluation.categories %}
+      <a class="category-card" href="{% section_url category.key deal.pk %}">
+        <div class="category-head">
+          <h2>{{ category.label }} <span>{{ category.weight }}%</span></h2>
+          <p>{{ category.running_display }}</p>
+        </div>
+        <div class="bar" aria-hidden="true"><span style="width: {{ category.bar_percent }}%"></span></div>
+        <p class="category-meta">{{ category.progress_label }}</p>
+        <ul class="factor-list">
+          {% for factor in category.factors %}
+            <li><span>{{ factor.label }}</span><strong>{{ factor.score_display }}</strong></li>
+          {% endfor %}
+        </ul>
+      </a>
+    {% endfor %}
+  </section>
+
+  <div class="split">
+    <section class="panel">
+      <h2>Risk flags</h2>
+      {% if report.flags %}
+        <ul class="flag-list">
+          {% for flag in report.flags %}
+            <li class="flag flag-{{ flag.severity }}">
+              <span class="flag-severity">{{ flag.severity_label }}</span>
+              {{ flag.message }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">No flags from the facts and scores entered so far.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <h2>Versus {{ deal.get_sector_display }} benchmarks</h2>
+      <p class="help">Working defaults for a first screen. <a href="{% url 'evaluations:benchmarks' %}">Edit benchmarks</a> to match the bar you use.</p>
+      {% if report.benchmark_missing %}
+        <p class="muted">No benchmark is saved for this sector.</p>
+      {% else %}
+        <ul class="band-list">
+          {% for row in report.benchmark_rows %}
+            <li class="band-row position-{{ row.position|default:'unknown' }}">
+              <div>
+                <h3>{{ row.label }}</h3>
+                <p class="band-range">{{ row.band_display }}</p>
+              </div>
+              <div class="band-result">
+                <p class="band-value">{{ row.value_display }}</p>
+                <p class="band-position">{{ row.position_label }}</p>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

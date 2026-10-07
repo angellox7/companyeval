@@ -1,0 +1,80 @@
+{% extends "evaluations/base.html" %}
+
+{% block title %}Pipeline · Companyeval{% endblock %}
+
+{% block content %}
+  <header class="page-head">
+    <div>
+      <h1>Pipeline</h1>
+      <p class="lede">Seed deals in diligence. A score of 3 meets a typical company in that sector.</p>
+    </div>
+    <a class="primary" href="{% url 'evaluations:deal_create' %}">New deal</a>
+  </header>
+
+  {% if reports %}
+    <div class="table-scroll">
+      <table class="pipeline">
+        <thead>
+          <tr>
+            <th scope="col">Company</th>
+            <th scope="col">Sector</th>
+            <th scope="col">Status</th>
+            <th scope="col">Score</th>
+            <th scope="col">Top flag</th>
+            <th scope="col">Updated</th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for report in reports %}
+            <tr>
+              <td>
+                <a class="company-link" href="{% url 'evaluations:deal_detail' report.deal.pk %}">{{ report.deal.company_name }}</a>
+                {% if report.deal.evaluation_mode == "ai" %}<span class="pill">AI</span>{% endif %}
+                {% if report.deal.one_liner %}<p class="muted tight">{{ report.deal.one_liner }}</p>{% endif %}
+              </td>
+              <td>{{ report.deal.get_sector_display }}</td>
+              <td><span class="status status-{{ report.deal.status }}">{{ report.deal.get_status_display }}</span></td>
+              <td>
+                {% if report.evaluation.composite is None %}
+                  <span class="muted">—</span>
+                {% else %}
+                  <span class="pipeline-score">{{ report.evaluation.composite_display }}</span>
+                  {% if report.evaluation.partial %}
+                    <span class="pill">Partial</span>
+                  {% endif %}
+                  {% if report.evaluation.complete %}
+                    <span class="pill pill-{{ report.evaluation.screen_slug }}">{{ report.evaluation.screen_label }}</span>
+                  {% endif %}
+                {% endif %}
+              </td>
+              <td>
+                {% if report.worst_flag %}
+                  <span class="flag-inline flag-{{ report.worst_flag.severity }}">{{ report.worst_flag.message }}</span>
+                {% else %}
+                  <span class="muted">—</span>
+                {% endif %}
+              </td>
+              <td>{{ report.deal.updated_at|date:"N j, Y" }}</td>
+              <td>
+                <div class="row-actions">
+                  <a class="quiet" href="{% url 'evaluations:deal_edit' report.deal.pk %}">Edit</a>
+                  <form method="post" action="{% url 'evaluations:deal_delete' report.deal.pk %}" onsubmit="return confirm('Delete {{ report.deal.company_name|escapejs }}?');">
+                    {% csrf_token %}
+                    <button type="submit" class="danger-quiet">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <section class="empty">
+      <h2>No deals yet</h2>
+      <p>Add a company to start a scorecard. You rate each factor; the composite, flags, and benchmark comparison follow from that.</p>
+      <a class="primary" href="{% url 'evaluations:deal_create' %}">New deal</a>
+    </section>
+  {% endif %}
+{% endblock %}

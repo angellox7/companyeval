@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Companyeval{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'evaluations/app.css' %}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      {% if user.is_authenticated %}
+        <a class="brand" href="{% url 'evaluations:pipeline' %}">Companyeval</a>
+        <nav class="topnav" aria-label="Primary">
+          <a href="{% url 'evaluations:pipeline' %}">Pipeline</a>
+          <a href="{% url 'evaluations:benchmarks' %}">Benchmarks</a>
+          <a href="{% url 'evaluations:fund_settings' %}">Settings</a>
+        </nav>
+        <form class="logout" method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit">Log out</button>
+        </form>
+      {% else %}
+        <span class="brand">Companyeval</span>
+      {% endif %}
+    </div>
+  </header>
+  <main class="wrap">
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
